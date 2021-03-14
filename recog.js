@@ -45,6 +45,7 @@ recog.init = function() {
   document.getElementById('addButton').addEventListener('click', recog.addButtonClick, false);
   document.getElementById('deleteButton').addEventListener('click', recog.deleteButtonClick, false);
   document.getElementById('results').addEventListener('click', recog.resultClick, false);
+  document.getElementById('recognizeButton').disabled = true;
 };
 window.addEventListener('load', recog.init);
 
@@ -120,15 +121,18 @@ recog.initResults = function() {
 
   for (var i = 0, network; (network = recog.networks[i]); i++) {
     var tr = document.createElement('tr');
-    var td = document.createElement('td');
-    td.textContent = network.name;
-    tr.appendChild(td);
-    td = document.createElement('td');
+    var td1 = document.createElement('td');
+    td1.textContent = network.name;
+    tr.appendChild(td1);
+    var td2 = document.createElement('td');
+    td2.className = 'percent';
     if (!isNaN(network.score)) {
-      td.textContent = Math.round(network.score * 100) + '%';
+      td2.textContent = Math.round(network.score * 100) + '%';
+      var size = (network.score > 0) ? (1 + network.score) : 1 / (1 - network.score);
+      td1.style.fontSize = Math.round(size * 100) + '%';
     }
+    tr.appendChild(td2);
     tr.id = 'result-' + i;
-    tr.appendChild(td);
     table.appendChild(tr);
   }
 };
@@ -222,38 +226,30 @@ recog.digitizeButtonClick = function() {
   var cropRight = right;
   scanLeft:
   for (var x = left; x < right; x++) {
-    for (var y = top; y < bottom; y++) {
-      if (recog.getPixel(x, y)) {
-        cropLeft = Math.max(x - 1, left);
-        break scanLeft;
-      }
+    if (recog.getPixel(x, top, 1, bottom - top)) {
+      cropLeft = Math.max(x - 1, left);
+      break scanLeft;
     }
   }
   scanRight:
   for (var x = right; x > cropLeft; x--) {
-    for (var y = top; y < bottom; y++) {
-      if (recog.getPixel(x, y)) {
-        cropRight = Math.min(x + 1, right);
-        break scanRight;
-      }
+  if (recog.getPixel(x, top, 1, bottom - top)) {
+      cropRight = Math.min(x + 1, right);
+      break scanRight;
     }
   }
   scanTop:
   for (var y = top; y < bottom; y++) {
-    for (var x = cropLeft; x < cropRight; x++) {
-      if (recog.getPixel(x, y)) {
-        cropTop = Math.max(y - 1, top);
-        break scanTop;
-      }
+    if (recog.getPixel(cropLeft, y, cropRight - cropLeft, 1)) {
+      cropTop = Math.max(y - 1, top);
+      break scanTop;
     }
   }
   scanBottom:
   for (var y = bottom; y > cropTop; y--) {
-    for (var x = cropLeft; x < cropRight; x++) {
-      if (recog.getPixel(x, y)) {
-        cropBottom = Math.min(y + 1, bottom);
-        break scanBottom;
-      }
+    if (recog.getPixel(cropLeft, y, cropRight - cropLeft, 1)) {
+      cropBottom = Math.min(y + 1, bottom);
+      break scanBottom;
     }
   }
 
@@ -308,7 +304,7 @@ recog.digitizeButtonClick = function() {
   for (var x = cropLeft; x < cropRight; x++) {
     var cellX = Math.floor((x - cropLeft) / (cropRight - cropLeft) * recog.cellsX);
     for (var y = cropTop; y < cropBottom; y++) {
-      if (recog.getPixel(x, y)) {
+      if (recog.getPixel(x, y, 1, 1)) {
         var cellY = Math.floor((y - cropTop) / (cropBottom - cropTop) * recog.cellsY);
         recog.cellData[cellX][cellY] = true;
       }
@@ -319,9 +315,14 @@ recog.digitizeButtonClick = function() {
   document.getElementById('recognizeButton').disabled = false;
 };
 
-recog.getPixel = function(x, y) {
-  var pixel = recog.handwritingContext.getImageData(x, y, 1, 1);
-  return pixel.data[2] > 127;
+recog.getPixel = function(x, y, h, w) {
+  var pixel = recog.handwritingContext.getImageData(x, y, h, w);
+  for (var i = 2; i < pixel.data.length; i += 4) {
+    if (pixel.data[i] > 127) {
+      return true;
+    }
+  }
+  return false;
 };
 
 recog.recognizeButtonClick = function() {
@@ -342,7 +343,7 @@ recog.learnButtonClick = function() {
 recog.addButtonClick = function() {
   var name = prompt('Name of character');
   if (!name) return;
-  recog.networks.push(new recog.Network(name));
+  recog.networks.unshift(new recog.Network(name));
   recog.initResults();
 };
 

@@ -22,7 +22,6 @@ h1, h2, h3 {
 #resultsDiv {
   height: 257px;
   width: 193px;
-  font-size: 17px;
   border: 1px solid #000;
   display: inline-block;
   box-sizing: border-box;
@@ -44,8 +43,12 @@ h1, h2, h3 {
   background-color: #eee;
 }
 
+.percent {
+  text-align: right;
+}
+
 .selected {
-  background-color: #88f;
+  background-color: #9cf;
 }
 
 .footer {
