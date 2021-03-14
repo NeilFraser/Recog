@@ -25,6 +25,7 @@ recog.cellsY = 8;
 recog.cropped = false;
 
 recog.networks = [];
+recog.selectedResultIndex = NaN;
 
 recog.init = function() {
   recog.clearButtonClick();
@@ -43,7 +44,8 @@ recog.init = function() {
   document.getElementById('learnButton').addEventListener('click', recog.learnButtonClick, false);
   document.getElementById('addButton').addEventListener('click', recog.addButtonClick, false);
   document.getElementById('deleteButton').addEventListener('click', recog.deleteButtonClick, false);
-}
+  document.getElementById('results').addEventListener('click', recog.resultClick, false);
+};
 window.addEventListener('load', recog.init);
 
 recog.clearButtonClick = function() {
@@ -108,20 +110,48 @@ recog.initCells = function() {
 };
 
 recog.initResults = function() {
-  var select = document.getElementById('results');
-  while (select.firstChild) {
-    select.removeChild(select.firstChild);
+  var table = document.getElementById('results');
+  while (table.firstChild) {
+    table.removeChild(table.firstChild);
   }
+  recog.selectedResultIndex = NaN;
+  document.getElementById('learnButton').disabled = true;
+  document.getElementById('deleteButton').disabled = true;
+
   for (var i = 0, network; (network = recog.networks[i]); i++) {
-    var option = document.createElement('option');
-    var score = '';
+    var tr = document.createElement('tr');
+    var td = document.createElement('td');
+    td.textContent = network.name;
+    tr.appendChild(td);
+    td = document.createElement('td');
     if (!isNaN(network.score)) {
-      score = ' ' + Math.round(network.score * 100) + '%';
+      td.textContent = Math.round(network.score * 100) + '%';
     }
-    option.textContent = network.name + score;
-    option.value = i;
-    select.appendChild(option);
+    tr.id = 'result-' + i;
+    tr.appendChild(td);
+    table.appendChild(tr);
   }
+};
+
+recog.resultClick = function(e) {
+  if (!isNaN(recog.selectedResultIndex)) {
+    var oldTr = document.getElementById('result-' + recog.selectedResultIndex);
+    oldTr.className = '';
+  }
+  var index = NaN;
+  var node = e.target;
+  while (node) {
+    index = parseInt(node.id.substring(7))
+    if (!isNaN(index)) {
+      break;
+    }
+    node = node.parentNode;
+  }
+  if (!recog.networks[index]) return;
+  node.className = 'selected';
+  recog.selectedResultIndex = index;
+  document.getElementById('learnButton').disabled = false;
+  document.getElementById('deleteButton').disabled = false;
 };
 
 recog.handwritingCanvasTopLeft = function() {
@@ -304,9 +334,8 @@ recog.recognizeButtonClick = function() {
 };
 
 recog.learnButtonClick = function() {
-  var i = document.getElementById('results').selectedIndex;
-  if (i === -1) return;
-  recog.networks[i].learn();
+  if (isNaN(recog.selectedResultIndex)) return;
+  recog.networks[recog.selectedResultIndex].learn();
   recog.recognizeButtonClick();
 };
 
@@ -318,9 +347,8 @@ recog.addButtonClick = function() {
 };
 
 recog.deleteButtonClick = function() {
-  var i = document.getElementById('results').selectedIndex;
-  if (i === -1) return;
-  recog.networks.splice(i, 1);
+  if (isNaN(recog.selectedResultIndex)) return;
+  recog.networks.splice(recog.selectedResultIndex, 1);
   recog.initResults();
 };
 

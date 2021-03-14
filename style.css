@@ -19,10 +19,33 @@ h1, h2, h3 {
   width: 193px;
 }
 
-#results {
+#resultsDiv {
   height: 257px;
   width: 193px;
   font-size: 17px;
+  border: 1px solid #000;
+  display: inline-block;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+#results {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#results td {
+  padding: 4px 8px;
+  cursor: default;
+}
+
+#results tr:hover:not(.selected) {
+  background-color: #eee;
+}
+
+.selected {
+  background-color: #88f;
 }
 
 .footer {
