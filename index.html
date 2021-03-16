@@ -9,17 +9,48 @@
   <body>
     <h1>Character Recognition</h1>
 
-    <button id="clearButton">Clear</button>
-    <canvas id="handwriting"></canvas>
-    <button id="digitizeButton">Digitize</button>
-    <canvas id="cells"></canvas>
-    <button id="recognizeButton">Recognize</button>
-    <div id="resultsDiv">
-      <table id="results"></table>
-    </div>
-    <button id="learnButton">Learn</button>
-    <button id="addButton">Add</button>
-    <button id="deleteButton">Delete</button>
+    <table>
+      <tr>
+        <td>
+          <button id="clearButton">Clear</button>
+        </td>
+        <td>
+          <canvas id="handwriting"></canvas>
+        </td>
+        <td>
+          <button id="digitizeButton">Digitize<br>&rarr;</button>
+        </td>
+        <td>
+          <canvas id="cells"></canvas>
+        </td>
+        <td>
+          <button id="recognizeButton">Recognize<br>&rarr;</button>
+        </td>
+        <td>
+          <div id="resultsDiv">
+            <table id="results"></table>
+          </div>
+        </td>
+        <td>
+          <div id="learnDiv">
+            Learning:
+            <select id="learningMode">
+              <option>None</option>
+              <option>Supervised</option>
+              <option>Unsupervised</option>
+            </select>
+            <p id="supervisedDiv">
+              <button id="learnButton">Learn</button><br><br>
+              <button id="addButton">Add</button><br>
+              <button id="deleteButton">Delete</button>
+            </p>
+            <p id="unsupervisedDiv">
+              [TODO: Unsupervised]
+            </p>
+          </div>
+        </td>
+      </tr>
+    </table>
 
     <hr>
     <div class="balls"><img src="google_balls.jpg" height=68 width=101></div>

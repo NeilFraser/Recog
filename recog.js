@@ -45,7 +45,9 @@ recog.init = function() {
   document.getElementById('addButton').addEventListener('click', recog.addButtonClick, false);
   document.getElementById('deleteButton').addEventListener('click', recog.deleteButtonClick, false);
   document.getElementById('results').addEventListener('click', recog.resultClick, false);
+  document.getElementById('learningMode').addEventListener('change', recog.changeLearningMode, false);
   document.getElementById('recognizeButton').disabled = true;
+  recog.changeLearningMode();
 };
 window.addEventListener('load', recog.init);
 
@@ -138,10 +140,6 @@ recog.initResults = function() {
 };
 
 recog.resultClick = function(e) {
-  if (!isNaN(recog.selectedResultIndex)) {
-    var oldTr = document.getElementById('result-' + recog.selectedResultIndex);
-    oldTr.className = '';
-  }
   var index = NaN;
   var node = e.target;
   while (node) {
@@ -151,8 +149,16 @@ recog.resultClick = function(e) {
     }
     node = node.parentNode;
   }
+  recog.resultHighlight(index);
+};
+
+recog.resultHighlight = function(index) {
+  if (!isNaN(recog.selectedResultIndex)) {
+    var oldTr = document.getElementById('result-' + recog.selectedResultIndex);
+    oldTr.className = '';
+  }
   if (!recog.networks[index]) return;
-  node.className = 'selected';
+  document.getElementById('result-' + index).className = 'selected';
   recog.selectedResultIndex = index;
   document.getElementById('learnButton').disabled = false;
   document.getElementById('deleteButton').disabled = false;
@@ -330,7 +336,18 @@ recog.recognizeButtonClick = function() {
   for (var i = 0, network; (network = recog.networks[i]); i++) {
     network.calculateScore();
   }
-  recog.networks.sort(function(a, b) {return b.score - a.score});
+  recog.networks.sort(function(a, b) {
+    if (isNaN(a.score) && isNaN(b.score)) {
+      return 0;
+    }
+    if (isNaN(a.score)) {
+      return 1;
+    }
+    if (isNaN(b.score)) {
+      return -1;
+    }
+    return b.score - a.score;
+  });
   recog.initResults();
 };
 
@@ -345,6 +362,7 @@ recog.addButtonClick = function() {
   if (!name) return;
   recog.networks.unshift(new recog.Network(name));
   recog.initResults();
+  recog.resultHighlight(0);
 };
 
 recog.deleteButtonClick = function() {
@@ -352,6 +370,13 @@ recog.deleteButtonClick = function() {
   recog.networks.splice(recog.selectedResultIndex, 1);
   recog.initResults();
 };
+
+recog.changeLearningMode = function() {
+  var modeIndex = document.getElementById('learningMode').selectedIndex;
+  document.getElementById('supervisedDiv').style.display = (modeIndex === 1) ? 'block' : 'none';
+  document.getElementById('unsupervisedDiv').style.display = (modeIndex === 2) ? 'block' : 'none';
+};
+
 
 recog.Network = function(name) {
   this.name = name;

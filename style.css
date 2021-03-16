@@ -23,7 +23,6 @@ h1, h2, h3 {
   height: 257px;
   width: 193px;
   border: 1px solid #000;
-  display: inline-block;
   box-sizing: border-box;
   overflow-x: hidden;
   overflow-y: scroll;
@@ -45,6 +44,19 @@ h1, h2, h3 {
 
 .percent {
   text-align: right;
+}
+
+#learnDiv {
+  height: 257px;
+  width: 193px;
+  border: 1px solid #000;
+  box-sizing: border-box;
+  padding: 5px;
+}
+
+#supervisedDiv,
+#unsupervisedDiv {
+  display: none;
 }
 
 .selected {
