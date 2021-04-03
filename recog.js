@@ -26,6 +26,7 @@ recog.cropped = false;
 
 recog.networks = [];
 recog.selectedResultIndex = NaN;
+recog.changed = false;
 
 recog.init = function() {
   recog.clearButtonClick();
@@ -46,7 +47,9 @@ recog.init = function() {
   document.getElementById('deleteButton').addEventListener('click', recog.deleteButtonClick, false);
   document.getElementById('results').addEventListener('click', recog.resultClick, false);
   document.getElementById('learningMode').addEventListener('change', recog.changeLearningMode, false);
+  document.getElementById('networkList').addEventListener('change', recog.changeNetworkList, false);
   document.getElementById('recognizeButton').disabled = true;
+  recog.changeNetworkList();
   recog.changeLearningMode();
 };
 window.addEventListener('load', recog.init);
@@ -137,6 +140,7 @@ recog.initResults = function() {
     tr.id = 'result-' + i;
     table.appendChild(tr);
   }
+  recog.resultHighlight(0);
 };
 
 recog.resultClick = function(e) {
@@ -333,6 +337,27 @@ recog.getPixel = function(x, y, h, w) {
 
 recog.recognizeButtonClick = function() {
   document.getElementById('recognizeButton').disabled = true;
+  recog.recognize();
+
+  var modeIndex = document.getElementById('learningMode').selectedIndex;
+  if (modeIndex === 2) {
+    // Unsupervised Learning.
+    var createLimit = Number(document.getElementById('createLimit').value);
+    var learnLimit = Number(document.getElementById('learnLimit').value);
+    var selectedNetwork = recog.networks[recog.selectedResultIndex];
+    var score = selectedNetwork ? selectedNetwork.score * 100 : -1;
+    if (!isNaN(createLimit) && createLimit >= score) {
+      if (!recog.addButtonClick()) {
+        return;  // User canceled.
+      }
+      recog.unsupervisedLearn();
+    } else if (!isNaN(learnLimit) && learnLimit <= score) {
+      recog.unsupervisedLearn();
+    }
+  }
+};
+
+recog.recognize = function() {
   for (var i = 0, network; (network = recog.networks[i]); i++) {
     network.calculateScore();
   }
@@ -351,6 +376,15 @@ recog.recognizeButtonClick = function() {
   recog.initResults();
 };
 
+recog.unsupervisedLearn = function() {
+  var selectedNetwork = recog.networks[recog.selectedResultIndex];
+  var oldScore = selectedNetwork.score;
+  selectedNetwork.learn();
+  recog.recognize();
+  console.log('Learning: "' + selectedNetwork.name +
+      '" (' + oldScore + ' -> ' + selectedNetwork.score + ')');
+};
+
 recog.learnButtonClick = function() {
   if (isNaN(recog.selectedResultIndex)) return;
   recog.networks[recog.selectedResultIndex].learn();
@@ -359,15 +393,18 @@ recog.learnButtonClick = function() {
 
 recog.addButtonClick = function() {
   var name = prompt('Name of character');
-  if (!name) return;
+  if (!name) return false;  // User canceled.
   recog.networks.unshift(new recog.Network(name));
   recog.initResults();
   recog.resultHighlight(0);
+  recog.changed = true;
+  return true;
 };
 
 recog.deleteButtonClick = function() {
   if (isNaN(recog.selectedResultIndex)) return;
   recog.networks.splice(recog.selectedResultIndex, 1);
+  recog.changed = true;
   recog.initResults();
 };
 
@@ -375,6 +412,25 @@ recog.changeLearningMode = function() {
   var modeIndex = document.getElementById('learningMode').selectedIndex;
   document.getElementById('supervisedDiv').style.display = (modeIndex === 1) ? 'block' : 'none';
   document.getElementById('unsupervisedDiv').style.display = (modeIndex === 2) ? 'block' : 'none';
+};
+
+recog.changeNetworkList = function() {
+  var networkName = document.getElementById('networkList').value;
+  var defaultNetwork = recog.DEFAULT_NETWORKS[networkName];
+  if (!defaultNetwork) {
+    throw Error('Unknown network: ' + networkName);
+  }
+  if (recog.changed && !confirm('Replace existing network?')) {
+    return;
+  }
+  recog.networks.length = 0;
+  for (var charName in defaultNetwork) {
+    var newNetwork = new recog.Network(charName)
+    newNetwork.load(defaultNetwork[charName]);
+    recog.networks.push(newNetwork);
+  }
+  recog.changed = false;
+  recog.initResults();
 };
 
 
@@ -390,6 +446,18 @@ recog.Network = function(name) {
   this.score = NaN;
 };
 
+recog.Network.prototype.load = function(array2d) {
+  // Deep copy.
+  this.data.length = 0;
+  for (var cellX = 0; cellX < recog.cellsX; cellX++) {
+    this.data[cellX] = [];
+    for (var cellY = 0; cellY < recog.cellsY; cellY++) {
+      this.data[cellX][cellY] = array2d[cellY][cellX];
+    }
+  }
+  this.score = NaN;
+};
+
 recog.Network.prototype.learn = function() {
   var LEARN_LIMIT = 3;
   for (var cellX = 0; cellX < recog.cellsX; cellX++) {
@@ -400,6 +468,7 @@ recog.Network.prototype.learn = function() {
       this.data[cellX][cellY] = datum;
     }
   }
+  recog.changed = true;
 };
 
 recog.Network.prototype.calculateScore = function() {
@@ -416,3 +485,171 @@ recog.Network.prototype.calculateScore = function() {
   }
   this.score = rawScore / (maxWeight * recog.cellsX * recog.cellsY);
 };
+
+recog.DEFAULT_NETWORKS = {};
+recog.DEFAULT_NETWORKS['digits'] = {
+  "0": [
+    [-3,  3,  3,  3,  3, -1],
+    [ 3,  3, -1, -3,  1,  3],
+    [ 3, -2, -3, -3, -3,  3],
+    [ 3, -3, -3, -3, -3,  3],
+    [ 3, -3, -3, -3, -3,  3],
+    [ 3, -3, -3, -3, -3,  3],
+    [ 3,  1, -3, -3,  1,  3],
+    [ 2,  3,  3,  3,  3,  3]
+  ],
+  "1": [
+    [-3,  1,  3,  3, -1, -3],
+    [ 2,  2,  3,  3, -1, -3],
+    [-3, -3,  1,  3, -1, -3],
+    [-3, -3,  1,  3, -1, -3],
+    [-3, -3,  1,  3, -1, -3],
+    [-3, -3,  1,  3, -3, -3],
+    [-3, -3,  1,  3, -2, -3],
+    [ 1,  2,  3,  3,  2,  0]
+  ],
+  "2": [
+    [ 2,  3,  3,  3,  3, -3],
+    [ 3,  0, -3, -3,  3,  3],
+    [ 0, -3, -3, -3, -2,  3],
+    [-3, -3, -3, -2,  1,  2],
+    [-3, -3, -3, -1,  3,  1],
+    [-3, -3,  0,  3,  2, -3],
+    [-3,  2,  3,  0, -3, -3],
+    [ 2,  3,  3,  3,  3,  3]
+  ],
+  "3": [
+    [ 3,  3,  3,  3,  3, -1],
+    [ 2, -2, -3, -3,  1,  3],
+    [-3, -3, -3, -3, -2,  3],
+    [-3, -3, -3, -2,  3,  3],
+    [-3, -3,  0,  3,  3,  3],
+    [-3, -3, -3, -3, -2,  3],
+    [-3, -3, -3, -3,  0,  3],
+    [ 0,  3,  3,  3,  3,  3]
+  ],
+  "4": [
+    [ 3, -3, -3,  3, -3, -3],
+    [ 3, -3, -3,  3, -3, -3],
+    [ 3, -3, -3,  3, -3, -3],
+    [ 3,  2,  0,  3,  0,  0],
+    [ 2,  3,  1,  3,  3,  3],
+    [-3, -3, -2,  3, -2, -2],
+    [-3, -3, -3,  3, -2, -3],
+    [-3, -3, -2,  3, -2, -3]
+  ],
+  "5": [
+    [ 3,  3,  3,  3,  3,  3],
+    [ 3, -2, -3, -3, -3, -3],
+    [ 3, -3, -3, -3, -3, -3],
+    [ 3,  3,  3,  3,  3,  0],
+    [ 3,  3, -3, -3,  2,  3],
+    [-3, -3, -3, -3, -3,  3],
+    [-3, -3, -3, -3,  3,  3],
+    [-3,  3,  3,  3,  3,  3]
+  ],
+  "6": [
+    [-3,  1,  3,  3,  2, -3],
+    [ 1,  3,  2, -3, -3, -3],
+    [ 3,  3, -3, -3, -3, -3],
+    [ 3, -2,  2,  0, -2, -3],
+    [ 3,  3,  3,  3,  3,  2],
+    [ 3,  0, -3, -3,  1,  3],
+    [ 1,  2, -3, -3, -2,  3],
+    [ 0,  1,  3,  3,  3,  3]
+  ],
+  "7": [
+    [ 3,  3,  3,  3,  3,  3],
+    [-3, -3, -2, -2,  0,  3],
+    [-3, -3, -3, -2,  3,  2],
+    [-3, -3, -3,  1,  3, -3],
+    [-3, -3, -3,  3,  0, -3],
+    [-3, -3, -2,  3, -3, -3],
+    [-3, -2,  3,  2, -3, -3],
+    [-3, -2,  3,  0, -3, -3]
+  ],
+  "8": [
+    [ 3,  3,  3,  3,  3,  1],
+    [ 3,  1, -3, -3,  0,  1],
+    [ 3,  0, -3, -3,  0,  1],
+    [ 3,  3,  2,  0,  3,  1],
+    [ 0,  3,  3,  3,  3,  3],
+    [ 3,  3, -3, -3,  0,  3],
+    [ 3,  1, -3, -3, -2,  3],
+    [ 0,  3,  3,  3,  3,  3]
+  ],
+  "9": [
+    [ 0,  3,  3,  3,  3,  2],
+    [ 3,  3, -2, -1, -1,  3],
+    [ 3,  2, -3, -3, -1,  3],
+    [ 0,  3,  2,  3,  3,  3],
+    [-2,  0,  3,  3,  3,  2],
+    [-3, -3, -3, -3, -1,  3],
+    [-3, -3, -3, -3, -1,  3],
+    [-3, -3, -3, -3, -1,  3]
+  ]
+};
+recog.DEFAULT_NETWORKS['vowels'] = {
+  "A": [
+    [-3, -3, -2,  3,  0, -3],
+    [-3, -3,  2,  3,  0, -3],
+    [-3, -2,  3,  3,  3, -3],
+    [-3,  3,  3,  3,  3, -3],
+    [-2,  3,  2,  2,  3,  2],
+    [ 3,  3, -3, -3,  2,  3],
+    [ 3,  2, -3, -3, -2,  3],
+    [ 3, -3, -3, -3, -3,  3]
+  ],
+  "E": [
+    [ 3,  3,  3,  3,  3,  3],
+    [ 3, -2, -3, -3, -3, -3],
+    [ 3, -2, -3, -3, -3, -3],
+    [ 3,  2,  0,  0,  0, -3],
+    [ 3,  3,  3,  3,  3, -3],
+    [ 3, -3, -3, -3, -3, -3],
+    [ 3, -3, -3, -3, -3, -3],
+    [ 3,  3,  3,  3,  3,  3]
+  ],
+  "I": [
+    [-3,  2,  3,  3,  2,  2],
+    [-3, -3, -2,  3,  2, -3],
+    [-3, -3, -1,  3, -1, -3],
+    [-3, -3,  1,  3, -1, -3],
+    [-3, -3,  1,  3, -1, -3],
+    [-3, -3,  1,  3, -3, -3],
+    [-3, -3,  1,  3, -3, -3],
+    [ 2,  2,  3,  3,  2,  2]
+  ],
+  "O": [
+    [-3,  2,  3,  3,  2, -3],
+    [ 2,  3,  0,  3,  3,  0],
+    [ 3,  0, -3, -3,  2,  3],
+     [3, -3, -3, -3, -3,  3],
+     [3, -3, -3, -3, -3,  3],
+     [3, -2, -3, -3, -3,  3],
+     [3,  3, -3, -3,  3,  3],
+     [0,  3,  3,  3,  3,  3]
+  ],
+  "U": [
+     [3, -3, -3, -3, -3,  3],
+     [3, -3, -3, -3, -3,  3],
+     [3, -3, -3, -3, -3,  3],
+     [3, -3, -3, -3, -3,  3],
+     [3, -2, -3, -3,  0,  3],
+     [3, -2, -3, -3,  0,  3],
+     [3,  3, -3, -2,  3,  3],
+     [2,  3,  3,  3,  3, -2]
+  ],
+  "Y": [
+    [ 3, -3, -3, -3, -3,  3],
+    [ 3,  3, -3, -3,  3,  3],
+    [-3,  3,  3,  3,  3, -1],
+    [-3, -1,  3,  1, -3, -3],
+    [-3, -3,  3,  1, -3, -3],
+    [-3, -3,  3,  1, -3, -3],
+    [-3, -3,  3, -1, -3, -3],
+    [-3, -3,  3, -3, -3, -3]
+  ]
+};
+
+recog.DEFAULT_NETWORKS['new'] = {};

@@ -33,19 +33,38 @@
         </td>
         <td>
           <div id="learnDiv">
-            Learning:
-            <select id="learningMode">
-              <option>None</option>
-              <option>Supervised</option>
-              <option>Unsupervised</option>
-            </select>
+            <p>
+              <label for="networkList">Network:</label>
+              <select id="networkList">
+                <option value="digits">0123456789</option>
+                <option value="vowels">AEIOUY</option>
+                <option value="new">New</option>
+              </select>
+            </p>
+            <p>
+              <label for="learningMode">Learning:</label>
+              <select id="learningMode">
+                <option>None</option>
+                <option>Supervised</option>
+                <option>Unsupervised</option>
+              </select>
+            </p>
             <p id="supervisedDiv">
               <button id="learnButton">Learn</button><br><br>
               <button id="addButton">Add</button><br>
               <button id="deleteButton">Delete</button>
             </p>
             <p id="unsupervisedDiv">
-              [TODO: Unsupervised]
+              <table>
+                <tr>
+                  <td><label for="createLimit">Create limit:</label></td>
+                  <td><input type="number" id="createLimit" min="0" max="100" value="40">%</td>
+                </tr>
+                <tr>
+                  <td><label for="learnLimit">Learn limit:</label></td>
+                  <td><input type="number" id="learnLimit" min="0" max="100" value="50">%</td>
+                </tr>
+              </table>
             </p>
           </div>
         </td>

@@ -59,6 +59,11 @@ h1, h2, h3 {
   display: none;
 }
 
+input[type="number"] {
+  text-align: right;
+  width: 4em;
+}
+
 .selected {
   background-color: #9cf;
 }
