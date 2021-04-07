@@ -12,19 +12,19 @@
     <table>
       <tr>
         <td>
-          <button id="clearButton">Clear</button>
+          <button id="clearButton" title="Erase the drawing.">Clear</button>
         </td>
         <td>
           <canvas id="handwriting"></canvas>
         </td>
         <td>
-          <button id="digitizeButton">Digitize<br>&rarr;</button>
+          <button id="digitizeButton" title="Convert the drawing into a pattern of 6x8 pixels.">Digitize<br>&rarr;</button>
         </td>
         <td>
           <canvas id="cells"></canvas>
         </td>
         <td>
-          <button id="recognizeButton">Recognize<br>&rarr;</button>
+          <button id="recognizeButton" title="Score the digitized pattern against each character.">Recognize<br>&rarr;</button>
         </td>
         <td>
           <div id="resultsDiv">
@@ -33,7 +33,7 @@
         </td>
         <td>
           <div id="learnDiv">
-            <p>
+            <p title="Load a neural network to recognize different characters.">
               <label for="networkList">Network:</label>
               <select id="networkList">
                 <option value="digits">0123456789</option>
@@ -41,7 +41,7 @@
                 <option value="new">New</option>
               </select>
             </p>
-            <p>
+            <p title="Improve the neural network by learning new patterns.">
               <label for="learningMode">Learning:</label>
               <select id="learningMode">
                 <option>None</option>
@@ -50,17 +50,17 @@
               </select>
             </p>
             <p id="supervisedDiv">
-              <button id="learnButton">Learn</button><br><br>
-              <button id="addButton">Add</button><br>
-              <button id="deleteButton">Delete</button>
+              <button id="learnButton" title="Apply the current digitized pattern onto the highlighted character.">Learn</button><br><br>
+              <button id="addButton" title="Create a new character.">Add</button><br>
+              <button id="deleteButton" title="Delete the highlighted character.">Delete</button>
             </p>
             <p id="unsupervisedDiv">
               <table>
-                <tr>
+                <tr title="Create a new characted if the best match is below this percentage.">
                   <td><label for="createLimit">Create limit:</label></td>
                   <td><input type="number" id="createLimit" min="0" max="100" value="40">%</td>
                 </tr>
-                <tr>
+                <tr title="Learn the current pattern onto the top character if it matches above this percentage.">
                   <td><label for="learnLimit">Learn limit:</label></td>
                   <td><input type="number" id="learnLimit" min="0" max="100" value="50">%</td>
                 </tr>
