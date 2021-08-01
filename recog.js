@@ -109,7 +109,8 @@ recog.initCells = function() {
       ctx.stroke();
       // Fill
       if (recog.cellData[cellX] && recog.cellData[cellX][cellY]) {
-        ctx.fillRect(cellWidth * cellX + 1, cellHeight * cellY + 1, cellWidth - 1, cellHeight - 1);
+        ctx.fillRect(cellWidth * cellX + 1, cellHeight * cellY + 1,
+                     cellWidth - 1, cellHeight - 1);
       }
     }
   }
@@ -133,7 +134,8 @@ recog.initResults = function() {
     td2.className = 'percent';
     if (!isNaN(network.score)) {
       td2.textContent = Math.round(network.score * 100) + '%';
-      var size = (network.score > 0) ? (1 + network.score) : 1 / (1 - network.score);
+      var size = (network.score > 0) ?
+          (1 + network.score) : 1 / (1 - network.score);
       td1.style.fontSize = Math.round(size * 100) + '%';
     }
     tr.appendChild(td2);
@@ -147,7 +149,7 @@ recog.resultClick = function(e) {
   var index = NaN;
   var node = e.target;
   while (node) {
-    index = parseInt(node.id.substring(7))
+    index = parseInt(node.id.substring(7));
     if (!isNaN(index)) {
       break;
     }
@@ -209,8 +211,9 @@ recog.mouseDown = function(e) {
 
 recog.mouseMove = function(e) {
   if (!recog.isDrawing) return;
-  var newX = e.clientX - recog.handwritingCanvasTopLeft().left;
-  var newY = e.clientY - recog.handwritingCanvasTopLeft().top;
+  var topLeft = recog.handwritingCanvasTopLeft();
+  var newX = e.clientX - topLeft.left;
+  var newY = e.clientY - topLeft.top;
   var oldX = recog.prevXY ? recog.prevXY.x : newX;
   var oldY = recog.prevXY ? recog.prevXY.y : newY;
   var ctx = recog.handwritingContext;
@@ -410,8 +413,10 @@ recog.deleteButtonClick = function() {
 
 recog.changeLearningMode = function() {
   var modeIndex = document.getElementById('learningMode').selectedIndex;
-  document.getElementById('supervisedDiv').style.display = (modeIndex === 1) ? 'block' : 'none';
-  document.getElementById('unsupervisedDiv').style.display = (modeIndex === 2) ? 'block' : 'none';
+  document.getElementById('supervisedDiv').style.display =
+      (modeIndex === 1) ? 'block' : 'none';
+  document.getElementById('unsupervisedDiv').style.display =
+      (modeIndex === 2) ? 'block' : 'none';
 };
 
 recog.changeNetworkList = function() {
@@ -425,7 +430,7 @@ recog.changeNetworkList = function() {
   }
   recog.networks.length = 0;
   for (var charName in defaultNetwork) {
-    var newNetwork = new recog.Network(charName)
+    var newNetwork = new recog.Network(charName);
     newNetwork.load(defaultNetwork[charName]);
     recog.networks.push(newNetwork);
   }
